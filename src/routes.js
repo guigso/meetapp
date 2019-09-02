@@ -6,6 +6,7 @@ import UserController from './app/controllers/UserController';
 import SessionController from './app/controllers/SessionController';
 import FileController from './app/controllers/FileController';
 import MeetupController from './app/controllers/MeetupController';
+import InscriptionController from './app/controllers/InscriptionController';
 
 import auth from './app/middlewares/auth';
 import OrganizerController from './app/controllers/OrganizerController';
@@ -27,5 +28,10 @@ routes.put('/meetups/:id', MeetupController.update);
 routes.delete('/meetups/:id', MeetupController.delete);
 
 routes.get('/organizing', OrganizerController.index);
+routes.get('/inscriptions', InscriptionController.index);
+
+
+routes.post('/meetups/:meetupId/inscription', InscriptionController.store);
+
 
 export default routes;

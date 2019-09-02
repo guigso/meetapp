@@ -1,0 +1,89 @@
+import { Op } from 'sequelize';
+import User from '../models/User';
+import Meetup from '../models/Meetup';
+import Inscription from '../models/Inscription';
+import Queue from '../../lib/Queue';
+import InscriptionMail from '../jobs/InscriptionMail';
+
+class InscriptionController {
+    async index(req, res) {
+        const inscriptions = await Inscription.findAll({
+            where: {
+                user_id: req.userId,
+            },
+            include: [
+                {
+                    model: Meetup,
+                    where: {
+                        date: {
+                            [Op.gt]: new Date(),
+                        },
+                    },
+                    required: true,
+                },
+            ],
+            order: [[Meetup, 'date']],
+        });
+
+        return res.json(inscriptions);
+    }
+
+    async store(req, res) {
+        const user = await User.findByPk(req.userId);
+        console.log(user.id);
+        const meetup = await Meetup.findByPk(req.params.meetupId, {
+            include: [User],
+        });
+        console.log(meetup.date);
+        if (!meetup) {
+            return res.status(400).json({ error: 'Invalid meetup' });
+        }
+
+        if (meetup.user_id === req.userId) {
+            return res
+                .status(400)
+                .json({ error: "Can't subscribe to your own meetup" });
+        }
+
+        if (meetup.past) {
+            return res
+                .status(400)
+                .json({ error: "Can't subscribe to past meetups" });
+        }
+
+        const checkDate = await Inscription.findOne({
+            where: {
+                user_id: user.id,
+            },
+            include: [
+                {
+                    model: Meetup,
+                    required: true,
+                    where: {
+                        date: meetup.date,
+                    },
+                },
+            ],
+        });
+
+        if (checkDate) {
+            return res.status(400).json({
+                error: "Can't subscribe to two meetups at the same time",
+            });
+        }
+
+        const inscription = await Inscription.create({
+            user_id: user.id,
+            meetup_id: meetup.id,
+        });
+
+        await Queue.add(InscriptionMail.key, {
+            meetup,
+            user,
+        });
+
+        return res.json(inscription);
+    }
+}
+
+export default new InscriptionController();
