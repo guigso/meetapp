@@ -3,6 +3,7 @@ import { isBefore, startOfHour, parseISO } from 'date-fns';
 
 import Meetup from '../models/Meetup';
 import User from '../models/User';
+import File from '../models/File';
 
 class MeetupController {
     async index(req, res) {
@@ -15,6 +16,10 @@ class MeetupController {
                 {
                     model: User,
                     attributes: ['name', 'id'],
+                },
+                {
+                    model: File,
+                    attributes: ['id', 'path', 'url'],
                 },
             ],
             limit: 10,
