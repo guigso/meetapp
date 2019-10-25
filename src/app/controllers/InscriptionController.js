@@ -15,6 +15,12 @@ class InscriptionController {
                 {
                     model: Meetup,
                     required: true,
+                    include: [
+                        {
+                            model: User,
+                            attributes: ['name', 'id'],
+                        },
+                    ],
                 },
             ],
             order: [[Meetup, 'date']],
