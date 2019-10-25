@@ -14,11 +14,6 @@ class InscriptionController {
             include: [
                 {
                     model: Meetup,
-                    where: {
-                        date: {
-                            [Op.gt]: new Date(),
-                        },
-                    },
                     required: true,
                 },
             ],
@@ -30,11 +25,9 @@ class InscriptionController {
 
     async store(req, res) {
         const user = await User.findByPk(req.userId);
-        console.log(user.id);
         const meetup = await Meetup.findByPk(req.params.meetupId, {
             include: [User],
         });
-        console.log(meetup.date);
         if (!meetup) {
             return res.status(400).json({ error: 'Invalid meetup' });
         }
@@ -83,6 +76,24 @@ class InscriptionController {
         });
 
         return res.json(inscription);
+    }
+
+    async delete(req, res) {
+        const user_id = req.userId;
+        const { meetupId } = req.params;
+
+        const inscription = await Inscription.findOne({
+            where: { user_id, meetup_id: meetupId },
+        });
+
+        if (!inscription) {
+            return res.status(404).json({
+                error: 'Inscription not found',
+            });
+        }
+        await inscription.destroy();
+
+        return res.send();
     }
 }
 

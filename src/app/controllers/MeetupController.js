@@ -9,6 +9,7 @@ import {
 } from 'date-fns';
 
 import Meetup from '../models/Meetup';
+import Inscription from '../models/Inscription';
 import User from '../models/User';
 import File from '../models/File';
 
@@ -17,7 +18,7 @@ class MeetupController {
         const { page = 1 } = req.query;
         const date = parseISO(req.query.date);
 
-        const meetups = await Meetup.findAll({
+        let meetups = await Meetup.findAll({
             where: {
                 user_id: {
                     [Op.not]: req.userId,
@@ -39,6 +40,23 @@ class MeetupController {
             limit: 10,
             offset: 10 * page - 10,
         });
+
+        const inscriptions = await Inscription.findAll({
+            where: {
+                user_id: {
+                    [Op.eq]: req.userId,
+                },
+            },
+            attributes: ['meetup_id'],
+        });
+        if (inscriptions) {
+            const inscriptionsId = inscriptions.map(
+                inscription => inscription.meetup_id
+            );
+            meetups = meetups.filter(
+                meetup => inscriptionsId.indexOf(meetup.id) === -1
+            );
+        }
 
         return res.json(meetups);
     }
